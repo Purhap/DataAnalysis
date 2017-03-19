@@ -14,7 +14,9 @@ import pandas as pd
 
 date1 = datetime.date( 2017, 1, 1 )
 date2 = datetime.date( 2017, 3, 20 )
-sp = f.quotes_historical_yahoo_ohlc('000049.sz', date1, date2, adjusted=True)
+stockcode = '000049.sz'
+
+sp = f.quotes_historical_yahoo_ohlc(stockcode, date1, date2, adjusted=True)
 df = pd.DataFrame(sp, columns=['date','open','high','low','close','volume'])
 df['date'] = dates.num2date(df['date'])
 df = df[df['volume'] != 0]
@@ -27,42 +29,46 @@ df = df[df['volume'] != 0]
 #ax.set_xticklabels([x.strftime('%Y-%m-%d') for x in temp_df['date']])
 ##fig.show()
 
-# calculate volume mean 
-temp_df = df
-params = [5, 10, 20]
-for p in params:
-    temp_df['vol'+str(p)] = pd.rolling_mean(df['volume'], window=p)
-temp_df = temp_df[temp_df['date'] >= datetime.date( 2016, 2, 1 )]
-print temp_df
+
 
 fig, axes = plt.subplots(4,1, sharex = True, sharey = False)
+    # axex 0  MA kline
+    # axex 1  EMA 
+    # axex 2  volume
+    # axex 2  MACD
 
 # draw MA line
 temp_df = df
-params = [5, 10, 20]
+params = [5, 10, 20, 30, 60, 120]
 for p in params:
     temp_df['ma'+str(p)] = pd.rolling_mean(df['close'], window=p)
-temp_df = temp_df[temp_df['date'] >= datetime.date( 2016, 2, 1 )]
-param_colors = [(1,0.7,0.2), (0,0.7,0.9), (0.9,0.5,0.9)]
+temp_df = temp_df[temp_df['date'] >= date1]
+param_colors = [(1,0.7,0.2), (0,0.7,0.9), (0.9,0.5,0.9),(0.3,0.5,0.7), (0.1,0.5,0.7), (0.3,0.7,0.7)]
 for (i,p) in enumerate(params):
     temp_df[['ma'+str(p)]].plot(kind='line', ax=axes[0], color=param_colors[i], use_index=False)
 axes[0].set_xticklabels([x.strftime('%d') for x in temp_df['date']])
-#fig.show()
+
 
 # draw EMA line
 params = [5, 10, 20]
 for p in params:
     temp_df['ema'+str(p)] = pd.ewma(temp_df['close'], span=p)
-temp_df = temp_df[temp_df['date'] >= datetime.date( 2016, 2, 1 )]
+temp_df = temp_df[temp_df['date'] >= date1]
 param_colors = [(1,0.7,0.2), (0,0.7,0.9), (0.9,0.5,0.9)]
 for (i,p) in enumerate(params):
     temp_df[['ema'+str(p)]].plot(kind='line', ax=axes[1], color=param_colors[i], use_index=False)
 axes[1].set_xticklabels([x.strftime('%d') for x in temp_df['date']])
-#fig.show()
 
-#fig.show()
+
+# calculate volume mean 
+temp_df = df
+params = [5, 10, 20]
+for p in params:
+    temp_df['vol'+str(p)] = pd.rolling_mean(df['volume'], window=p)
+temp_df = temp_df[temp_df['date'] >= date1]
+#print temp_df
+
 ## draw volume mean chart
-
 param_colors = [(1,0.7,0.2), (0,0.7,0.9), (0.9,0.5,0.9)]
 for (i,p) in enumerate(params):
     temp_df[['vol'+str(p)]].plot(kind='line', ax=axes[2], color=param_colors[i], use_index=False)
@@ -71,9 +77,7 @@ axes[2].set_xticklabels([x.strftime('%Y-%m-%d') for x in temp_df['date']])
 plt.show()
 
 #calculate MACD
-date1 = datetime.date( 2015, 6, 1 )
-date2 = datetime.date( 2016, 2, 20 )
-sp = f.quotes_historical_yahoo_ohlc('601233.ss', date1, date2, adjusted=True)
+sp = f.quotes_historical_yahoo_ohlc(stockcode, date1, date2, adjusted=True)
 temp_df = pd.DataFrame(sp, columns=['date','open','high','low','close','volume'])
 temp_df['date'] = dates.num2date(temp_df['date'])
 temp_df = temp_df[temp_df['volume'] != 0]
@@ -84,7 +88,7 @@ for p in params:
 temp_df['DIF'] = temp_df['ema12'] - temp_df['ema26']
 temp_df['DEM'] = pd.ewma(temp_df['DIF'], span=9)
 temp_df['MACD'] = (temp_df['DIF'] - temp_df['DEM']) * 2
-temp_df = temp_df[temp_df['date'] >= datetime.date( 2015, 12, 1 )]
+temp_df = temp_df[temp_df['date'] >= date1]
 
 #draw macd
 #fig, ax = plt.subplots()
@@ -92,4 +96,7 @@ param_colors = [(1,0.7,0.2), (0,0.7,0.9), (0.9,0.5,0.9)]
 temp_df[['DIF','DEM']].plot(kind='line', ax=axes[3], color=param_colors, use_index=False)
 temp_df[['MACD']].plot(kind='bar', ax=axes[3], color=['r' if x[-1] > 0 else 'g' for x in temp_df.itertuples()])
 axes[3].set_xticklabels([x.strftime('%d') for x in temp_df['date']])
+
+axes[0].set_title(stockcode)
+#fig.dpi = 400
 fig.show()
